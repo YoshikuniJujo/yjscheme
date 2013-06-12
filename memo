@@ -1,0 +1,7 @@
+2013.06.12 Wed.
+
+eval :: Cons -> StateT Environment (ErrorT String IO Primitive)
+
+とする必要がある。
+あるいは新たな monad を作って、それを State class と ErrorMonad class に入れるか。
+前者を取ったとしても type MyMonad = ... は必要だろう。
