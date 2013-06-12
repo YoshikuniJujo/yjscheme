@@ -10,9 +10,11 @@ main = doWhile_ $ do
 	putStr "> " >> hFlush stdout
 	parsed <- parse <$> getLine
 	case parsed of
-		Just (Cons (Atom (Variable "exit")) (Atom Null)) -> return False
 		Just cons -> do
-			print cons
+			s <- runErrorT $ eval initialEnvironment cons
+			case s of
+				Right r -> print r
+				Left err -> putStrLn $ "error: " ++ err
 			return True
 		_ -> do	putStrLn "parse error"
 			return True

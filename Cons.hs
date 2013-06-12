@@ -1,13 +1,16 @@
-{-# LANGUAGE QuasiQuotes, FlexibleContexts #-}
+{-# LANGUAGE QuasiQuotes, FlexibleContexts, PackageImports #-}
 
 module Cons (
 	Cons(..),
+	isDouble,
+	getDouble,
 	Atom(..),
 	Primitive(..),
 	parse
 ) where
 
 import Text.Peggy (peggy, space, defaultDelimiter, parseString)
+import "monads-tf" Control.Monad.Error
 
 data Cons = Cons { car :: Cons, cdr :: Cons } | Atom Atom
 
@@ -34,10 +37,19 @@ instance Show Atom where
 
 data Primitive
 	= Int { getInt :: Int }
-	| Function ([Primitive] -> Primitive)
+	| Double Double
+	| Function ([Primitive] -> ErrorT String IO Primitive)
+
+isDouble (Double _) = True
+isDouble _ = False
+
+getDouble :: Primitive -> Double
+getDouble (Int n) = fromIntegral n
+getDouble (Double d) = d
 
 instance Show Primitive where
 	show (Int n) = show n
+	show (Double d) = show d
 	show (Function _) = "(Function _)"
 
 parse :: String -> Maybe Cons
@@ -61,7 +73,11 @@ atom :: Atom
 	/ 'nil'				{ Null }
 
 primitive :: Primitive
-	= [0-9]+			{ Int $ read $1 }
+	= int '.' int			{ Double $ read $ $1 ++ "." ++ $2 }
+	/ int				{ Int $ read $1 }
+
+int :: String
+	= [0-9]+
 
 variable :: String
 	= [-+*/_a-z]+			{ $1 }
