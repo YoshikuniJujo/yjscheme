@@ -33,7 +33,7 @@ instance Show Atom where
 	show Null = "nil"
 
 data Primitive
-	= Int Int
+	= Int { getInt :: Int }
 	| Function ([Primitive] -> Primitive)
 
 instance Show Primitive where

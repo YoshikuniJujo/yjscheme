@@ -3,7 +3,7 @@ module Main where
 import System.IO
 import Control.Applicative
 import Control.Monad
-import Cons
+import Eval
 
 main :: IO ()
 main = doWhile_ $ do
