@@ -32,20 +32,24 @@ instance Read Cons where
 		Nothing -> []
 
 data Atom
-	= Int { getInt :: Int }
+	= Null
+	| Define
+	| Lambda
+	| Variable String
+	| Int { getInt :: Int }
 	| Double Double
 	| Function ([Atom] -> ErrorT String (StateT Environment IO) Atom)
-	| Define
-	| Variable String
-	| Null
+	| Clojure Environment [String] Cons
 
 instance Show Atom where
 	show Null = "nil"
+	show Define = "#<syntax define>"
+	show Lambda = "#<syntax lambda>"
 	show (Int n) = show n
 	show (Double d) = show d
 	show (Function _) = "(Function _)"
 	show (Variable v) = v
-
+	show (Clojure _ _ _) = "#<clojure _>"
 
 isDouble (Double _) = True
 isDouble _ = False
@@ -71,6 +75,7 @@ list :: Cons
 
 atom :: Atom
 	= 'define'			{ Define }
+	/ 'lambda'			{ Lambda }
 	/ variable			{ Variable $1 }
 	/ int '.' int			{ Double $ read $ $1 ++ "." ++ $2 }
 	/ int				{ Int $ read $1 }

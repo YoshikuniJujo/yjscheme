@@ -14,3 +14,5 @@ eval :: Cons -> StateT Environment (ErrorT String IO Primitive)
 primitive な function として扱おうとすると、
 eval が複雑なものになってしまう。
 つまり、正格評価がしにくくなる。
+
+define を特別扱いしたので、Function は [Atom] -> ErrorT String Atom で良さそうだ。

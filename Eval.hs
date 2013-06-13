@@ -22,11 +22,32 @@ eval (Cons (Atom Define) (Cons (Atom (Variable var)) (Cons val _))) = do
 	r <- eval val
 	put $ (var, r) : env
 	return $ Variable var
+eval (Cons
+	(Atom Define)
+	(Cons (Cons (Atom (Variable fn)) vars) (Cons body _))) = do
+	lambda <- eval $ Cons (Atom Lambda) $ Cons vars $ Cons body $ Atom Null
+	eval $ Cons (Atom Define) $ Cons (Atom (Variable fn)) $
+		Cons (Atom lambda) $ Atom Null
+eval (Cons (Atom Lambda) (Cons cvars (Cons body _))) = do
+	env <- get
+	vars <- mapCons (\(Atom (Variable var)) -> return var) cvars
+	return $ Clojure env vars body
+eval (Cons (Atom (Clojure env vars body)) cvars) = do
+	genv <- get
+	vals <- mapCons eval cvars
+	put $ zip vars vals ++ env
+	ret <- eval body
+	put genv
+	return ret
 eval (Cons fun args) = do
 	env <- get
-	Function f <- eval fun
-	as <- mapCons eval args
-	f as
+	fc <- eval fun
+	case fc of
+		Function f -> do
+			as <- mapCons eval args
+			f as
+		Clojure _ _ _ -> eval $ Cons (Atom fc) args
+		_ -> fail $ "bad: " ++ show fc
 eval (Atom (Variable var)) = do
 	env <- get
 	case lookup var env of
