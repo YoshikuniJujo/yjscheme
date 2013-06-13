@@ -6,11 +6,15 @@ module Cons (
 	getDouble,
 	Atom(..),
 	Primitive(..),
-	parse
+	parse,
+	Environment
 ) where
 
 import Text.Peggy (peggy, space, defaultDelimiter, parseString)
 import "monads-tf" Control.Monad.Error
+import "monads-tf" Control.Monad.State
+
+type Environment = [(String, Primitive)]
 
 data Cons = Cons { car :: Cons, cdr :: Cons } | Atom Atom
 
@@ -28,17 +32,18 @@ instance Read Cons where
 		Just r -> [(r, "")]
 		Nothing -> []
 
-data Atom = Primitive Primitive | Variable String | Null
+data Atom = Primitive Primitive | Null
 
 instance Show Atom where
 	show (Primitive p) = show p
-	show (Variable v) = v
 	show Null = "nil"
 
 data Primitive
 	= Int { getInt :: Int }
 	| Double Double
-	| Function ([Primitive] -> ErrorT String IO Primitive)
+	| Function ([Primitive] -> ErrorT String (StateT Environment IO) Primitive)
+	| Define
+	| Variable String
 
 isDouble (Double _) = True
 isDouble _ = False
@@ -51,6 +56,7 @@ instance Show Primitive where
 	show (Int n) = show n
 	show (Double d) = show d
 	show (Function _) = "(Function _)"
+	show (Variable v) = v
 
 parse :: String -> Maybe Cons
 parse = either (const Nothing) Just . parseString cons ""
@@ -69,11 +75,12 @@ list :: Cons
 
 atom :: Atom
 	= primitive			{ Primitive $1 }
-	/ variable			{ Variable $1 }
 	/ 'nil'				{ Null }
 
 primitive :: Primitive
-	= int '.' int			{ Double $ read $ $1 ++ "." ++ $2 }
+	= 'define'			{ Define }
+	/ variable			{ Variable $1 }
+	/ int '.' int			{ Double $ read $ $1 ++ "." ++ $2 }
 	/ int				{ Int $ read $1 }
 
 int :: String

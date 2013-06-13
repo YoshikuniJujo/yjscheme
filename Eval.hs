@@ -3,25 +3,36 @@
 module Eval (
 	eval,
 	runErrorT,
+	runStateT,
 
 	parse,
-	initialEnvironment
+	initialEnvironment,
+	liftIO
 ) where
 
 import Environment
 
 import Control.Applicative
 import "monads-tf" Control.Monad.Error
+import "monads-tf" Control.Monad.State
 
-eval :: Environment -> Cons -> ErrorT String IO Primitive
-eval _ (Atom (Primitive p)) = lift $ return p
-eval env (Cons fun args) = do
-	Function f <- eval env fun
-	as <- mapCons (eval env) args
+eval :: Cons -> ErrorT String (StateT Environment IO) Primitive
+eval (Cons (Atom (Primitive Define)) (Cons (Atom (Primitive (Variable var))) (Cons val _))) = do
+	env <- get
+	r <- eval val
+	put $ (var, r) : env
+	return $ Variable var
+eval (Cons fun args) = do
+	env <- get
+	Function f <- eval fun
+	as <- mapCons eval args
 	f as
-eval env (Atom (Variable var)) = case lookup var env of
-	Just val -> return val
-	_ -> fail $ "no such var: " ++ var
+eval (Atom (Primitive (Variable var))) = do
+	env <- get
+	case lookup var env of
+		Just val -> return val
+		_ -> fail $ "no such var: " ++ var
+eval (Atom (Primitive p)) = return p
 
 mapCons :: Applicative m => (Cons -> m a) -> Cons -> m [a]
 mapCons _ (Atom Null) = pure []

@@ -6,17 +6,17 @@ import Control.Monad
 import Eval
 
 main :: IO ()
-main = doWhile_ $ do
-	putStr "> " >> hFlush stdout
-	parsed <- parse <$> getLine
+main = (>> return ()) $ flip runStateT initialEnvironment $ doWhile_ $ do
+	liftIO $ putStr "> " >> hFlush stdout
+	parsed <- liftIO $ parse <$> getLine
 	case parsed of
 		Just cons -> do
-			s <- runErrorT $ eval initialEnvironment cons
+			s <- runErrorT $ eval cons
 			case s of
-				Right r -> print r
-				Left err -> putStrLn $ "error: " ++ err
+				Right r -> liftIO $ print r
+				Left err -> liftIO $ putStrLn $ "error: " ++ err
 			return True
-		_ -> do	putStrLn "parse error"
+		_ -> do	liftIO $ putStrLn "parse error"
 			return True
 
 doWhile_ :: Monad m => m Bool -> m ()

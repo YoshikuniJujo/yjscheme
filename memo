@@ -5,3 +5,12 @@ eval :: Cons -> StateT Environment (ErrorT String IO Primitive)
 とする必要がある。
 あるいは新たな monad を作って、それを State class と ErrorMonad class に入れるか。
 前者を取ったとしても type MyMonad = ... は必要だろう。
+
+2013.06.13 Thu.
+
+設計上の選択が必要だ。
+つまり、define を parse 段階から特殊なものとするか、
+あるいは primitive な function として扱うか。
+primitive な function として扱おうとすると、
+eval が複雑なものになってしまう。
+つまり、正格評価がしにくくなる。
