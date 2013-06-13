@@ -17,6 +17,7 @@ import "monads-tf" Control.Monad.Error
 import "monads-tf" Control.Monad.State
 
 eval :: Cons -> ErrorT String (StateT Environment IO) Atom
+eval (Cons (Atom Cond) sel) = cond sel
 eval (Cons (Atom Define) (Cons (Atom (Variable var)) (Cons val _))) = do
 	env <- get
 	r <- eval val
@@ -58,3 +59,11 @@ eval (Atom p) = return p
 mapCons :: Applicative m => (Cons -> m a) -> Cons -> m [a]
 mapCons _ (Atom Null) = pure []
 mapCons f (Cons a d) = (:) <$> f a <*> mapCons f d
+
+cond :: Cons -> ErrorT String (StateT Environment IO) Atom
+cond (Atom Null) = return Undef
+cond (Cons (Cons p (Cons body _)) t) = do
+	b <- eval p
+	case b of
+		F -> cond t
+		_ -> eval body

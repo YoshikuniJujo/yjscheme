@@ -32,9 +32,13 @@ instance Read Cons where
 		Nothing -> []
 
 data Atom
-	= Null
+	= Undef
+	| Null
+	| F
+	| T
 	| Define
 	| Lambda
+	| Cond
 	| Variable String
 	| Int { getInt :: Int }
 	| Double Double
@@ -42,9 +46,13 @@ data Atom
 	| Clojure Environment [String] Cons
 
 instance Show Atom where
-	show Null = "nil"
+	show Undef = "#<undef>"
+	show Null = "()"
+	show T = "#t"
+	show F = "#f"
 	show Define = "#<syntax define>"
 	show Lambda = "#<syntax lambda>"
+	show Cond = "#<syntax cond>"
 	show (Int n) = show n
 	show (Double d) = show d
 	show (Function _) = "(Function _)"
@@ -76,15 +84,19 @@ list :: Cons
 atom :: Atom
 	= 'define'			{ Define }
 	/ 'lambda'			{ Lambda }
+	/ 'cond'			{ Cond }
+	/ '#f'				{ F }
+	/ '#t'				{ T }
+	/ 'nil'				{ Null }
 	/ variable			{ Variable $1 }
 	/ int '.' int			{ Double $ read $ $1 ++ "." ++ $2 }
 	/ int				{ Int $ read $1 }
-	/ 'nil'				{ Null }
+	/ '()'				{ Null }
 
 int :: String
 	= [0-9]+
 
 variable :: String
-	= [-+*/_a-z]+			{ $1 }
+	= [-+*/_<=>a-z]+		{ $1 }
 
 |]

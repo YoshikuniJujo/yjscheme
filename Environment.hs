@@ -16,7 +16,10 @@ initialEnvironment = [
 	("+", Function add),
 	("-", Function sub),
 	("*", Function mul),
-	("/", Function div')
+	("/", Function div'),
+	(">", Function isLarger),
+	("=", Function equal),
+	("<", Function isSmaller)
  ]
 
 exit :: [Atom] -> ErrorT String (StateT Environment IO) Atom
@@ -40,3 +43,15 @@ div' [] = fail "this procedure required at least one argument"
 div' [Int n] = return $ Double $ 1 / fromIntegral n
 div' (Int n : ns) = return $ Double $ (fromIntegral n /) $ fromIntegral $
 	product $ map getInt ns
+
+isLarger, equal, isSmaller :: [Atom] -> ErrorT String (StateT Environment IO) Atom
+isLarger [Int n1, Int n2]
+	| n1 > n2 = return T
+	| otherwise = return F
+isLarger _ = fail "bad argument"
+equal [Int n1, Int n2]
+	| n1 == n2 = return T
+	| otherwise = return F
+isSmaller [Int n1, Int n2]
+	| n1 < n2 = return T
+	| otherwise = return F
