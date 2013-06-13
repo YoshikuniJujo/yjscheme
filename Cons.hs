@@ -5,7 +5,6 @@ module Cons (
 	isDouble,
 	getDouble,
 	Atom(..),
-	Primitive(..),
 	parse,
 	Environment
 ) where
@@ -14,7 +13,7 @@ import Text.Peggy (peggy, space, defaultDelimiter, parseString)
 import "monads-tf" Control.Monad.Error
 import "monads-tf" Control.Monad.State
 
-type Environment = [(String, Primitive)]
+type Environment = [(String, Atom)]
 
 data Cons = Cons { car :: Cons, cdr :: Cons } | Atom Atom
 
@@ -32,31 +31,28 @@ instance Read Cons where
 		Just r -> [(r, "")]
 		Nothing -> []
 
-data Atom = Primitive Primitive | Null
-
-instance Show Atom where
-	show (Primitive p) = show p
-	show Null = "nil"
-
-data Primitive
+data Atom
 	= Int { getInt :: Int }
 	| Double Double
-	| Function ([Primitive] -> ErrorT String (StateT Environment IO) Primitive)
+	| Function ([Atom] -> ErrorT String (StateT Environment IO) Atom)
 	| Define
 	| Variable String
+	| Null
 
-isDouble (Double _) = True
-isDouble _ = False
-
-getDouble :: Primitive -> Double
-getDouble (Int n) = fromIntegral n
-getDouble (Double d) = d
-
-instance Show Primitive where
+instance Show Atom where
+	show Null = "nil"
 	show (Int n) = show n
 	show (Double d) = show d
 	show (Function _) = "(Function _)"
 	show (Variable v) = v
+
+
+isDouble (Double _) = True
+isDouble _ = False
+
+getDouble :: Atom -> Double
+getDouble (Int n) = fromIntegral n
+getDouble (Double d) = d
 
 parse :: String -> Maybe Cons
 parse = either (const Nothing) Just . parseString cons ""
@@ -74,14 +70,11 @@ list :: Cons
 	/ ''				{ Atom Null }
 
 atom :: Atom
-	= primitive			{ Primitive $1 }
-	/ 'nil'				{ Null }
-
-primitive :: Primitive
 	= 'define'			{ Define }
 	/ variable			{ Variable $1 }
 	/ int '.' int			{ Double $ read $ $1 ++ "." ++ $2 }
 	/ int				{ Int $ read $1 }
+	/ 'nil'				{ Null }
 
 int :: String
 	= [0-9]+

@@ -19,12 +19,12 @@ initialEnvironment = [
 	("/", Function div')
  ]
 
-exit :: [Primitive] -> ErrorT String (StateT Environment IO) Primitive
+exit :: [Atom] -> ErrorT String (StateT Environment IO) Atom
 exit [] = liftIO exitSuccess
 exit [Int n] = liftIO $ exitWith $ ExitFailure n
 exit _ = fail "Usage: (exit [exit status])"
 
-add, sub, mul, div' :: [Primitive] -> ErrorT String (StateT Environment IO) Primitive
+add, sub, mul, div' :: [Atom] -> ErrorT String (StateT Environment IO) Atom
 
 add ns	| any isDouble ns = return $ Double $ sum $ map getDouble ns
 	| otherwise = return $ Int $ sum $ map getInt ns
@@ -40,9 +40,3 @@ div' [] = fail "this procedure required at least one argument"
 div' [Int n] = return $ Double $ 1 / fromIntegral n
 div' (Int n : ns) = return $ Double $ (fromIntegral n /) $ fromIntegral $
 	product $ map getInt ns
-
-{-
-define :: StateT Environment (ErrorT String IO) Primitive
-define [Variable
-define _ = fail "bad arguments"
--}

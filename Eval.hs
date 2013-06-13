@@ -16,8 +16,8 @@ import Control.Applicative
 import "monads-tf" Control.Monad.Error
 import "monads-tf" Control.Monad.State
 
-eval :: Cons -> ErrorT String (StateT Environment IO) Primitive
-eval (Cons (Atom (Primitive Define)) (Cons (Atom (Primitive (Variable var))) (Cons val _))) = do
+eval :: Cons -> ErrorT String (StateT Environment IO) Atom
+eval (Cons (Atom Define) (Cons (Atom (Variable var)) (Cons val _))) = do
 	env <- get
 	r <- eval val
 	put $ (var, r) : env
@@ -27,12 +27,12 @@ eval (Cons fun args) = do
 	Function f <- eval fun
 	as <- mapCons eval args
 	f as
-eval (Atom (Primitive (Variable var))) = do
+eval (Atom (Variable var)) = do
 	env <- get
 	case lookup var env of
 		Just val -> return val
 		_ -> fail $ "no such var: " ++ var
-eval (Atom (Primitive p)) = return p
+eval (Atom p) = return p
 
 mapCons :: Applicative m => (Cons -> m a) -> Cons -> m [a]
 mapCons _ (Atom Null) = pure []
