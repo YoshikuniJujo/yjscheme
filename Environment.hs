@@ -3,10 +3,10 @@
 module Environment (
 	initialEnvironment,
 
-	module Cons
+	module Object
 ) where
 
-import Cons
+import Object
 import System.Exit
 import "monads-tf" Control.Monad.Error
 import "monads-tf" Control.Monad.State
@@ -22,12 +22,12 @@ initialEnvironment = [
 	("<", Function isSmaller)
  ]
 
-exit :: [Atom] -> ErrorT String (StateT Environment IO) Atom
+exit :: [Object] -> ErrorT String (StateT Environment IO) Object
 exit [] = liftIO exitSuccess
 exit [Int n] = liftIO $ exitWith $ ExitFailure n
 exit _ = fail "Usage: (exit [exit status])"
 
-add, sub, mul, div' :: [Atom] -> ErrorT String (StateT Environment IO) Atom
+add, sub, mul, div' :: [Object] -> ErrorT String (StateT Environment IO) Object
 
 add ns	| any isDouble ns = return $ Double $ sum $ map getDouble ns
 	| otherwise = return $ Int $ sum $ map getInt ns
@@ -44,7 +44,7 @@ div' [Int n] = return $ Double $ 1 / fromIntegral n
 div' (Int n : ns) = return $ Double $ (fromIntegral n /) $ fromIntegral $
 	product $ map getInt ns
 
-isLarger, equal, isSmaller :: [Atom] -> ErrorT String (StateT Environment IO) Atom
+isLarger, equal, isSmaller :: [Object] -> ErrorT String (StateT Environment IO) Object
 isLarger [Int n1, Int n2]
 	| n1 > n2 = return T
 	| otherwise = return F

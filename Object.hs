@@ -1,10 +1,9 @@
 {-# LANGUAGE QuasiQuotes, FlexibleContexts, PackageImports #-}
 
-module Cons (
-	Cons(..),
+module Object (
+	Object(..),
 	isDouble,
 	getDouble,
-	Atom(..),
 	parse,
 	Environment
 ) where
@@ -13,26 +12,11 @@ import Text.Peggy (peggy, space, defaultDelimiter, parseString)
 import "monads-tf" Control.Monad.Error
 import "monads-tf" Control.Monad.State
 
-type Environment = [(String, Atom)]
+type Environment = [(String, Object)]
 
-data Cons = Cons { car :: Cons, cdr :: Cons } | Atom Atom
-
-instance Show Cons where
-	show c@(Cons _ _) = "(" ++ showCons c ++ ")"
-	show (Atom a) = show a
-
-showCons :: Cons -> String
-showCons (Cons a d@(Cons _ _)) = show a ++ " " ++ showCons d
-showCons (Cons a (Atom Null)) = show a
-showCons (Cons a d) = show a ++ " . " ++ show d
-
-instance Read Cons where
-	readsPrec 0 inp = case parse inp of
-		Just r -> [(r, "")]
-		Nothing -> []
-
-data Atom
-	= Undef
+data Object
+	= Cons { car :: Object, cdr :: Object }
+	| Undef
 	| Null
 	| F
 	| T
@@ -42,10 +26,11 @@ data Atom
 	| Variable String
 	| Int { getInt :: Int }
 	| Double Double
-	| Function ([Atom] -> ErrorT String (StateT Environment IO) Atom)
-	| Clojure Environment [String] Cons
+	| Function ([Object] -> ErrorT String (StateT Environment IO) Object)
+	| Clojure Environment [String] Object
 
-instance Show Atom where
+instance Show Object where
+	show c@(Cons _ _) = "(" ++ showCons c ++ ")"
 	show Undef = "#<undef>"
 	show Null = "()"
 	show T = "#t"
@@ -59,29 +44,39 @@ instance Show Atom where
 	show (Variable v) = v
 	show (Clojure _ _ _) = "#<clojure _>"
 
+showCons :: Object -> String
+showCons (Cons a d@(Cons _ _)) = show a ++ " " ++ showCons d
+showCons (Cons a Null) = show a
+showCons (Cons a d) = show a ++ " . " ++ show d
+
+instance Read Object where
+	readsPrec 0 inp = case parse inp of
+		Just r -> [(r, "")]
+		Nothing -> []
+
 isDouble (Double _) = True
 isDouble _ = False
 
-getDouble :: Atom -> Double
+getDouble :: Object -> Double
 getDouble (Int n) = fromIntegral n
 getDouble (Double d) = d
 
-parse :: String -> Maybe Cons
+parse :: String -> Maybe Object
 parse = either (const Nothing) Just . parseString cons ""
 
 [peggy|
 
-cons :: Cons
+cons :: Object
 	= '(' cons ' '* '.' ' '* cons ')'	{ Cons $1 $4 }
 	/ '(' list ')'				{ $1 }
-	/ atom					{ Atom $1 }
+	/ atom					{ $1 }
 
-list :: Cons
+list :: Object
 	= cons ' '* list		{ Cons $1 $3 }
 	/ '.' ' '* cons			{ $2 }
-	/ ''				{ Atom Null }
+	/ ''				{ Null }
 
-atom :: Atom
+atom :: Object
 	= 'define'			{ Define }
 	/ 'lambda'			{ Lambda }
 	/ 'cond'			{ Cond }
