@@ -26,7 +26,8 @@ initialEnvironment = [
 	("<", Subroutine isSmaller),
 	("define", Syntax define),
 	("lambda", Syntax lambda),
-	("cond", Syntax cond)
+	("cond", Syntax cond),
+	("not", Subroutine not')
  ]
 
 exit :: [Object] -> Run Object
@@ -41,7 +42,10 @@ add ns	| any isDouble ns = return $ Double $ sum $ map getDouble ns
 
 sub [] = fail "this procedure required at least one argument"
 sub [Int n] = return $ Int $ - n
-sub (Int n : ns) = return $ Int $ (n -) $ sum $ map getInt ns
+sub [Double n] = return $ Double $ - n
+sub (Int n : ns)
+	| any isDouble ns = fail $ "subr -: yet " ++ show ns
+	| otherwise = return $ Int $ (n -) $ sum $ map getInt ns
 sub args = fail $ "subr -: " ++ show args
 
 mul ns	| any isDouble ns = return $ Double $ product $ map getDouble ns
@@ -57,14 +61,23 @@ isLarger, equal, isSmaller :: [Object] -> Run Object
 isLarger [Int n1, Int n2]
 	| n1 > n2 = return T
 	| otherwise = return F
-isLarger _ = fail "bad argument"
+isLarger [n1, n2]
+	| isDouble n1 || isDouble n2 = return $
+		if getDouble n1 > getDouble n2 then T else F
+isLarger args = fail $ "subr >: " ++ show args
 equal [Int n1, Int n2]
 	| n1 == n2 = return T
 	| otherwise = return F
+equal [n1, n2]
+	| isDouble n1 || isDouble n2 = return $
+		if getDouble n1 == getDouble n2 then T else F
 equal args = fail $ "subr =: " ++ show args
 isSmaller [Int n1, Int n2]
 	| n1 < n2 = return T
 	| otherwise = return F
+isSmaller [n1, n2]
+	| isNum n1 && isNum n2 && (isDouble n1 || isDouble n2) = return $
+		if getDouble n1 < getDouble n2 then T else F
 isSmaller args = fail $ "subr <: " ++ show args
 
 define, lambda :: Object -> Run Object
@@ -93,3 +106,8 @@ cond (Cons (Cons p (Cons body _)) t) = do
 		F -> cond t
 		_ -> eval body
 cond obj = fail $ "syntax cond: " ++ show obj
+
+not' :: [Object] -> Run Object
+not' [F] = return T
+not' [_] = return F
+not' args = fail $ "subr not: " ++ show args

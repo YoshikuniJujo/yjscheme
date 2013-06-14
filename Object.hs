@@ -7,6 +7,7 @@
 
 module Object (
 	Object(..),
+	isNum,
 	isDouble,
 	getDouble,
 	parse,
@@ -19,6 +20,7 @@ import Text.Peggy (peggy, space, defaultDelimiter, parseString)
 import "monads-tf" Control.Monad.Error
 import "monads-tf" Control.Monad.State
 import "transformers" Control.Monad.Trans.Error
+import Data.Maybe
 
 type Environment = [(String, Object)]
 type Run = ErrorT RunError (StateT Environment IO)
@@ -69,6 +71,11 @@ instance Read Object where
 		Just r -> [(r, "")]
 		Nothing -> []
 
+isNum :: Object -> Bool
+isNum (Int _) = True
+isNum (Double _) = True
+isNum _ = False
+
 isDouble :: Object -> Bool
 isDouble (Double _) = True
 isDouble _ = False
@@ -97,10 +104,13 @@ atom :: Object
 	= '#f'				{ F }
 	/ '#t'				{ T }
 	/ 'nil'				{ Null }
+	/ sinedInt '.' int		{ Double $ read $ $1 ++ "." ++ $2 }
+	/ sinedInt			{ Int $ read $1 }
 	/ variable			{ Variable $1 }
-	/ int '.' int			{ Double $ read $ $1 ++ "." ++ $2 }
-	/ int				{ Int $ read $1 }
 	/ '()'				{ Null }
+
+sinedInt :: String
+	= '-'? int			{ fromMaybe "" $1 ++ $2 }
 
 int :: String
 	= [0-9]+
