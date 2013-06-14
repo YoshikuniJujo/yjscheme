@@ -27,6 +27,9 @@ initialEnvironment = [
 	("define", Syntax define),
 	("lambda", Syntax lambda),
 	("cond", Syntax cond),
+	("if", Syntax if'),
+	("and", Syntax and'),
+	("or", Syntax or'),
 	("not", Subroutine not')
  ]
 
@@ -106,6 +109,32 @@ cond (Cons (Cons p (Cons body _)) t) = do
 		F -> cond t
 		_ -> eval body
 cond obj = fail $ "syntax cond: " ++ show obj
+
+if' :: Object -> Run Object
+if' (Cons p (Cons t (Cons e _))) = do
+	b <- eval p
+	eval $ case b of
+		F -> e
+		_ -> t
+if' obj = fail $ "syntax if: " ++ show obj
+
+and', or' :: Object -> Run Object
+
+and' Null = return T
+and' (Cons p rest) = do
+	b <- eval p
+	case b of
+		F -> return F
+		_ -> and' rest
+and' obj = fail $ "syntax and: " ++ show obj
+
+or' Null = return F
+or' (Cons p rest) = do
+	b <- eval p
+	case b of
+		F -> or' rest
+		_ -> return T
+or' obj = fail $ "syntax or: " ++ show obj
 
 not' :: [Object] -> Run Object
 not' [F] = return T
