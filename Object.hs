@@ -98,13 +98,13 @@ multiCons :: [Object]
 	= sp (cons sp)*				{ map fst $2 }
 
 cons :: Object
-	= '(' cons ' '* '.' ' '* cons ')'	{ Cons $1 $4 }
+	= '(' sp cons sp '.' sp cons ')'	{ Cons $2 $5 }
 	/ '(' list ')'				{ $1 }
 	/ atom					{ $1 }
 
 list :: Object
-	= cons ' '* list		{ Cons $1 $3 }
-	/ '.' ' '* cons			{ $2 }
+	= cons sp list		{ Cons $1 $3 }
+	/ '.' sp cons			{ $2 }
 	/ ''				{ Null }
 
 atom :: Object
@@ -126,6 +126,6 @@ variable :: String
 	= [-+*/_<=>a-z]+		{ $1 }
 
 sp :: ()
-	= (' ' / '\n')*			{ () }
+	= (' ' / '\t' / '\n')*		{ () }
 
 |]
