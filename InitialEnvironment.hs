@@ -30,7 +30,9 @@ initialEnvironment = [
 	("if", Syntax if'),
 	("and", Syntax and'),
 	("or", Syntax or'),
-	("not", Subroutine not')
+	("not", Subroutine not'),
+	("begin", Subroutine begin),
+	("print", Subroutine print')
  ]
 
 exit :: [Object] -> Run Object
@@ -103,12 +105,20 @@ lambda obj = fail $ "syntax lambda: " ++ show obj
 
 cond :: Object -> Run Object
 cond Null = return Undef
-cond (Cons (Cons p (Cons body _)) t) = do
+cond (Cons (Cons p body) t) = do
 	b <- eval p
 	case b of
 		F -> cond t
-		_ -> eval body
+		_ -> begin' body
 cond obj = fail $ "syntax cond: " ++ show obj
+
+begin' :: Object -> Run Object
+begin' (Cons v Null) = eval v
+begin' (Cons v vs) = eval v >> begin' vs
+begin' obj = fail $ "syntax begin': " ++ show obj
+
+begin :: [Object] -> Run Object
+begin args = return $ last args
 
 if' :: Object -> Run Object
 if' (Cons p (Cons t (Cons e _))) = do
@@ -140,3 +150,7 @@ not' :: [Object] -> Run Object
 not' [F] = return T
 not' [_] = return F
 not' args = fail $ "subr not: " ++ show args
+
+print' :: [Object] -> Run Object
+print' [arg] = liftIO $ print arg >> return Undef
+print' args = fail $ "subr print: " ++ show args
