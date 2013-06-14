@@ -105,6 +105,7 @@ lambda obj = fail $ "syntax lambda: " ++ show obj
 
 cond :: Object -> Run Object
 cond Null = return Undef
+cond (Cons (Cons (Variable "else") body) _) = begin' body
 cond (Cons (Cons p body) t) = do
 	b <- eval p
 	case b of
