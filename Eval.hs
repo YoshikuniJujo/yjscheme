@@ -5,33 +5,19 @@ module Eval (
 	runErrorT,
 	runStateT,
 
-	parse,
-	initialEnvironment,
-	liftIO
+	liftIO,
+	mapCons,
+	cond,
+	module Object
 ) where
 
-import Environment
+import Object
 
 import Control.Applicative
 import "monads-tf" Control.Monad.Error
 import "monads-tf" Control.Monad.State
 
 eval :: Object -> ErrorT String (StateT Environment IO) Object
-eval (Cons Cond sel) = cond sel
-eval (Cons Define (Cons (Variable var) (Cons val _))) = do
-	env <- get
-	r <- eval val
-	put $ (var, r) : env
-	return $ Variable var
-eval (Cons Define
-	(Cons (Cons (Variable fn) vars) (Cons body _))) = do
-	lambda <- eval $ Cons Lambda $ Cons vars $ Cons body Null
-	eval $ Cons Define $ Cons (Variable fn) $
-		Cons lambda Null
-eval (Cons Lambda (Cons cvars (Cons body _))) = do
-	env <- get
-	vars <- mapCons (\(Variable var) -> return var) cvars
-	return $ Clojure env vars body
 eval (Cons (Clojure env vars body) cvars) = do
 	genv <- get
 	vals <- mapCons eval cvars
@@ -43,7 +29,9 @@ eval (Cons fun args) = do
 	env <- get
 	fc <- eval fun
 	case fc of
-		Function f -> do
+		Syntax s -> do
+			s args
+		Subroutine f -> do
 			as <- mapCons eval args
 			f as
 		Clojure _ _ _ -> eval $ Cons fc args

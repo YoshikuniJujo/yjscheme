@@ -1,25 +1,31 @@
 {-# LANGUAGE PackageImports #-}
 
-module Environment (
+module InitialEnvironment (
 	initialEnvironment,
-
-	module Object
+	liftIO,
+	runStateT,
+	parse,
+	runErrorT,
+	eval
 ) where
 
-import Object
+import Eval
 import System.Exit
 import "monads-tf" Control.Monad.Error
 import "monads-tf" Control.Monad.State
 
 initialEnvironment = [
-	("exit", Function exit),
-	("+", Function add),
-	("-", Function sub),
-	("*", Function mul),
-	("/", Function div'),
-	(">", Function isLarger),
-	("=", Function equal),
-	("<", Function isSmaller)
+	("exit", Subroutine exit),
+	("+", Subroutine add),
+	("-", Subroutine sub),
+	("*", Subroutine mul),
+	("/", Subroutine div'),
+	(">", Subroutine isLarger),
+	("=", Subroutine equal),
+	("<", Subroutine isSmaller),
+	("define", Syntax define),
+	("lambda", Syntax lambda),
+	("cond", Syntax cond)
  ]
 
 exit :: [Object] -> ErrorT String (StateT Environment IO) Object
@@ -55,3 +61,20 @@ equal [Int n1, Int n2]
 isSmaller [Int n1, Int n2]
 	| n1 < n2 = return T
 	| otherwise = return F
+
+define, lambda :: Object -> ErrorT String (StateT Environment IO) Object
+
+define (Cons v@(Variable var) (Cons val _)) = do
+	r <- eval val
+	modify ((var, r) :)
+	return v
+define (Cons (Cons fn@(Variable _) vars) body) = do
+	cl <- lambda $ Cons vars body
+	define $ Cons fn $ Cons cl undefined
+	return fn
+define c = fail $ "syntax define: " ++ show c
+
+lambda (Cons cvars (Cons body _)) = do
+	env <- get
+	vars <- mapCons (\(Variable var) -> return var) cvars
+	return $ Clojure env vars body

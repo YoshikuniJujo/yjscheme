@@ -3,7 +3,7 @@ module Main where
 import System.IO
 import Control.Applicative
 import Control.Monad
-import Eval
+import InitialEnvironment
 
 main :: IO ()
 main = (>> return ()) $ flip runStateT initialEnvironment $ doWhile_ $ do

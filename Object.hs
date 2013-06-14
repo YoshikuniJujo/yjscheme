@@ -15,19 +15,17 @@ import "monads-tf" Control.Monad.State
 type Environment = [(String, Object)]
 
 data Object
-	= Cons { car :: Object, cdr :: Object }
-	| Undef
+	= Undef
 	| Null
 	| F
 	| T
-	| Define
-	| Lambda
-	| Cond
-	| Variable String
 	| Int { getInt :: Int }
 	| Double Double
-	| Function ([Object] -> ErrorT String (StateT Environment IO) Object)
+	| Variable String
+	| Syntax (Object -> ErrorT String (StateT Environment IO) Object)
+	| Subroutine ([Object] -> ErrorT String (StateT Environment IO) Object)
 	| Clojure Environment [String] Object
+	| Cons { car :: Object, cdr :: Object }
 
 instance Show Object where
 	show c@(Cons _ _) = "(" ++ showCons c ++ ")"
@@ -35,13 +33,11 @@ instance Show Object where
 	show Null = "()"
 	show T = "#t"
 	show F = "#f"
-	show Define = "#<syntax define>"
-	show Lambda = "#<syntax lambda>"
-	show Cond = "#<syntax cond>"
 	show (Int n) = show n
 	show (Double d) = show d
-	show (Function _) = "(Function _)"
 	show (Variable v) = v
+	show (Syntax _) = "#<syntax _>"
+	show (Subroutine _) = "#<subr _>"
 	show (Clojure _ _ _) = "#<clojure _>"
 
 showCons :: Object -> String
@@ -77,10 +73,7 @@ list :: Object
 	/ ''				{ Null }
 
 atom :: Object
-	= 'define'			{ Define }
-	/ 'lambda'			{ Lambda }
-	/ 'cond'			{ Cond }
-	/ '#f'				{ F }
+	= '#f'				{ F }
 	/ '#t'				{ T }
 	/ 'nil'				{ Null }
 	/ variable			{ Variable $1 }
