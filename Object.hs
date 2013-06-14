@@ -10,6 +10,7 @@ module Object (
 	isNum,
 	isDouble,
 	getDouble,
+	multiParse,
 	parse,
 	Environment,
 	Run,
@@ -85,10 +86,16 @@ getDouble (Int n) = fromIntegral n
 getDouble (Double d) = d
 getDouble _ = error "getDouble: not number"
 
+multiParse :: String -> Maybe [Object]
+multiParse = either (const Nothing) Just . parseString multiCons ""
+
 parse :: String -> Maybe Object
 parse = either (const Nothing) Just . parseString cons ""
 
 [peggy|
+
+multiCons :: [Object]
+	= sp (cons sp)*				{ map fst $2 }
 
 cons :: Object
 	= '(' cons ' '* '.' ' '* cons ')'	{ Cons $1 $4 }
@@ -117,5 +124,8 @@ int :: String
 
 variable :: String
 	= [-+*/_<=>a-z]+		{ $1 }
+
+sp :: ()
+	= (' ' / '\n')*			{ () }
 
 |]

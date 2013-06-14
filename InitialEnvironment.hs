@@ -5,9 +5,12 @@ module InitialEnvironment (
 	liftIO,
 	runStateT,
 	parse,
+	multiParse,
 	runErrorT,
 	eval,
-	RunError(..)
+	RunError(..),
+	Run,
+	Object
 ) where
 
 import Eval
