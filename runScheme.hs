@@ -21,10 +21,13 @@ main = do
 					Left (Fail msg) -> do
 						liftIO $ putStrLn $ "error: " ++ msg
 						return Nothing
-					Left (Exit n) -> return $ Just n
+					Left (ExitWith n) -> return $ Just $ ExitFailure n
+					Left Exit -> return $ Just ExitSuccess
 			_ -> do	liftIO $ putStrLn "parse error"
 				return Nothing
-	exitWith $ ExitFailure r
+	exitWith $ case r of
+		ExitFailure 0 -> ExitSuccess
+		_ -> r
 
 doWhile_ :: Monad m => m Bool -> m ()
 doWhile_ action = action >>= flip when (doWhile_ action)

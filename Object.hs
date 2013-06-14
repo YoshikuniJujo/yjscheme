@@ -1,4 +1,9 @@
 {-# LANGUAGE QuasiQuotes, FlexibleContexts, PackageImports #-}
+{-# OPTIONS_GHC
+	-fno-warn-unused-do-bind
+	-fno-warn-unused-binds
+	-fno-warn-name-shadowing
+	-fno-warn-unused-matches #-}
 
 module Object (
 	Object(..),
@@ -20,7 +25,8 @@ type Environment = [(String, Object)]
 type Run = ErrorT RunError (StateT Environment IO)
 
 data RunError
-	= Exit Int
+	= Exit
+	| ExitWith Int
 	| Fail String
 	deriving Show
 
@@ -51,24 +57,27 @@ instance Show Object where
 	show (Variable v) = v
 	show (Syntax _) = "#<syntax _>"
 	show (Subroutine _) = "#<subr _>"
-	show (Clojure _ _ _) = "#<clojure _>"
+	show Clojure{} = "#<clojure _>"
 
 showCons :: Object -> String
 showCons (Cons a d@(Cons _ _)) = show a ++ " " ++ showCons d
 showCons (Cons a Null) = show a
 showCons (Cons a d) = show a ++ " . " ++ show d
+showCons obj = error $ "showCons: " ++ show obj
 
 instance Read Object where
-	readsPrec 0 inp = case parse inp of
+	readsPrec _ inp = case parse inp of
 		Just r -> [(r, "")]
 		Nothing -> []
 
+isDouble :: Object -> Bool
 isDouble (Double _) = True
 isDouble _ = False
 
 getDouble :: Object -> Double
 getDouble (Int n) = fromIntegral n
 getDouble (Double d) = d
+getDouble _ = error "getDouble: not number"
 
 parse :: String -> Maybe Object
 parse = either (const Nothing) Just . parseString cons ""
