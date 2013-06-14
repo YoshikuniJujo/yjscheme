@@ -52,7 +52,8 @@ sub [] = fail "this procedure required at least one argument"
 sub [Int n] = return $ Int $ - n
 sub [Double n] = return $ Double $ - n
 sub (Int n : ns)
-	| any isDouble ns = fail $ "subr -: yet " ++ show ns
+	| any isDouble ns = return $ Double $ (fromIntegral n -) $ sum $
+		map getDouble ns
 	| otherwise = return $ Int $ (n -) $ sum $ map getInt ns
 sub args = fail $ "subr -: " ++ show args
 
@@ -63,6 +64,8 @@ div' [] = fail "this procedure required at least one argument"
 div' [Int n] = return $ Double $ 1 / fromIntegral n
 div' (Int n : ns) = return $ Double $ (fromIntegral n /) $ fromIntegral $
 	product $ map getInt ns
+div' (Double d : ds) = return $ Double $ (d /) $ fromIntegral $
+	product $ map getInt ds
 div' args = fail $ "subr /: " ++ show args
 
 isLarger, equal, isSmaller :: [Object] -> Run Object

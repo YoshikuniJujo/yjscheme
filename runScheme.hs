@@ -18,7 +18,10 @@ main :: IO ()
 main = do
 	fns <- getArgs
 	(r, _) <- flip runStateT initialEnvironment $ do
-		runErrorT $ mapM_ runFile fns
+		ret <- runErrorT $ mapM_ runFile fns
+		case ret of
+			Left (Fail msg) -> liftIO $ putStrLn $ "error: " ++ msg
+			_ -> return ()
 		doWhileR $ do
 			liftIO $ putStr "> " >> hFlush stdout
 			parsed <- liftIO $ parse <$> getLine
