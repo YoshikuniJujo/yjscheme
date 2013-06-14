@@ -21,7 +21,6 @@ import "monads-tf" Control.Monad.State
 import "transformers" Control.Monad.Trans.Error
 
 type Environment = [(String, Object)]
--- type RunError = String
 type Run = ErrorT RunError (StateT Environment IO)
 
 data RunError

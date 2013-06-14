@@ -16,3 +16,9 @@ eval が複雑なものになってしまう。
 つまり、正格評価がしにくくなる。
 
 define を特別扱いしたので、Function は [Atom] -> ErrorT String Atom で良さそうだ。
+
+2013.06.14 Fri.
+
+次は macro かな。
+あとは、continuation と末尾再帰の最適化だな。
+macro を作るのはいろいろと微妙な点が多いので後にしよう。
