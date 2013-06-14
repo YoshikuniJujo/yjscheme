@@ -16,7 +16,7 @@ import Control.Applicative
 import "monads-tf" Control.Monad.Error
 import "monads-tf" Control.Monad.State
 
-eval :: Object -> ErrorT String (StateT Environment IO) Object
+eval :: Object -> Run Object
 eval (Cons (Clojure env vars body) cvars) = do
 	genv <- get
 	vals <- mapCons eval cvars

@@ -6,7 +6,8 @@ module InitialEnvironment (
 	runStateT,
 	parse,
 	runErrorT,
-	eval
+	eval,
+	RunError(..)
 ) where
 
 import Eval
@@ -28,12 +29,12 @@ initialEnvironment = [
 	("cond", Syntax cond)
  ]
 
-exit :: [Object] -> ErrorT String (StateT Environment IO) Object
-exit [] = liftIO exitSuccess
-exit [Int n] = liftIO $ exitWith $ ExitFailure n
+exit :: [Object] -> Run Object
+exit [] = throwError $ Exit 0
+exit [Int n] = throwError $ Exit n
 exit _ = fail "Usage: (exit [exit status])"
 
-add, sub, mul, div' :: [Object] -> ErrorT String (StateT Environment IO) Object
+add, sub, mul, div' :: [Object] -> Run Object
 
 add ns	| any isDouble ns = return $ Double $ sum $ map getDouble ns
 	| otherwise = return $ Int $ sum $ map getInt ns
@@ -50,7 +51,7 @@ div' [Int n] = return $ Double $ 1 / fromIntegral n
 div' (Int n : ns) = return $ Double $ (fromIntegral n /) $ fromIntegral $
 	product $ map getInt ns
 
-isLarger, equal, isSmaller :: [Object] -> ErrorT String (StateT Environment IO) Object
+isLarger, equal, isSmaller :: [Object] -> Run Object
 isLarger [Int n1, Int n2]
 	| n1 > n2 = return T
 	| otherwise = return F
@@ -62,7 +63,7 @@ isSmaller [Int n1, Int n2]
 	| n1 < n2 = return T
 	| otherwise = return F
 
-define, lambda :: Object -> ErrorT String (StateT Environment IO) Object
+define, lambda :: Object -> Run Object
 
 define (Cons v@(Variable var) (Cons val _)) = do
 	r <- eval val
@@ -79,7 +80,7 @@ lambda (Cons cvars (Cons body _)) = do
 	vars <- mapCons (\(Variable var) -> return var) cvars
 	return $ Clojure env vars body
 
-cond :: Object -> ErrorT String (StateT Environment IO) Object
+cond :: Object -> Run Object
 cond Null = return Undef
 cond (Cons (Cons p (Cons body _)) t) = do
 	b <- eval p

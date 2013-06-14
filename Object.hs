@@ -5,14 +5,27 @@ module Object (
 	isDouble,
 	getDouble,
 	parse,
-	Environment
+	Environment,
+	Run,
+	RunError(..)
 ) where
 
 import Text.Peggy (peggy, space, defaultDelimiter, parseString)
 import "monads-tf" Control.Monad.Error
 import "monads-tf" Control.Monad.State
+import "transformers" Control.Monad.Trans.Error
 
 type Environment = [(String, Object)]
+-- type RunError = String
+type Run = ErrorT RunError (StateT Environment IO)
+
+data RunError
+	= Exit Int
+	| Fail String
+	deriving Show
+
+instance Error RunError where
+	strMsg = Fail
 
 data Object
 	= Undef
@@ -22,8 +35,8 @@ data Object
 	| Int { getInt :: Int }
 	| Double Double
 	| Variable String
-	| Syntax (Object -> ErrorT String (StateT Environment IO) Object)
-	| Subroutine ([Object] -> ErrorT String (StateT Environment IO) Object)
+	| Syntax (Object -> Run Object)
+	| Subroutine ([Object] -> Run Object)
 	| Clojure Environment [String] Object
 	| Cons { car :: Object, cdr :: Object }
 
