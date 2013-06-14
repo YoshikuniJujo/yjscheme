@@ -7,7 +7,6 @@ module Eval (
 
 	liftIO,
 	mapCons,
-	cond,
 	module Object
 ) where
 
@@ -46,11 +45,3 @@ eval p = return p
 mapCons :: Applicative m => (Object -> m a) -> Object -> m [a]
 mapCons _ Null = pure []
 mapCons f (Cons a d) = (:) <$> f a <*> mapCons f d
-
-cond :: Object -> ErrorT String (StateT Environment IO) Object
-cond Null = return Undef
-cond (Cons (Cons p (Cons body _)) t) = do
-	b <- eval p
-	case b of
-		F -> cond t
-		_ -> eval body
